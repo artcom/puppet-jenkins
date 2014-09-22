@@ -95,6 +95,7 @@ class jenkins::slave (
       $disable_ssl_verification_flag = ''
   }
 
+  
   #add jenkins slave user if necessary.
   if $manage_slave_user and $slave_uid {
     user { 'jenkins-slave_user':
@@ -102,8 +103,7 @@ class jenkins::slave (
       name       => $slave_user,
       comment    => 'Jenkins Slave user',
       home       => $slave_home,
-      managehome => true,
-      uid        => $slave_uid,
+      managehome => $::osfamily != 'Darwin',
     }
   }
 
@@ -113,14 +113,14 @@ class jenkins::slave (
       name       => $slave_user,
       comment    => 'Jenkins Slave user',
       home       => $slave_home,
-      managehome => true,
+      managehome => $::osfamily != 'Darwin',
     }
   }
 
   exec { 'get_swarm_client':
     command => "wget -O ${slave_home}/${client_jar} ${client_url}/${client_jar}",
     path    => '/usr/bin:/usr/sbin:/bin:/usr/local/bin',
-    user    => $slave_user,
+    #user    => $slave_user,
     #refreshonly => true,
     creates => "${slave_home}/${client_jar}",
     ## needs to be fixed if you create another version..
@@ -153,15 +153,19 @@ class jenkins::slave (
     $fsroot_flag = "-fsroot ${slave_home}"
   }
 
+  $mode_flag = ''
+
+  $executors_flag = "-executors ${executors}"
+
   # choose the correct init functions
   case $::osfamily {
     Debian:  {
-      file { '/etc/init.d/jenkins-slave':
+      file { '/etc/init.d/jenkins-slave-debian':
         ensure  => 'file',
         mode    => '0700',
         owner   => 'root',
         group   => 'root',
-        source  => "puppet:///modules/${module_name}/jenkins-slave",
+        source  => "puppet:///modules/${module_name}/jenkins-slave.${::osfamily}",
         notify  => Service['jenkins-slave'],
         require => File['/etc/default/jenkins-slave'],
       }
@@ -179,6 +183,36 @@ class jenkins::slave (
       package {'daemon':
         ensure => present,
       }
+      service { 'jenkins-slave':
+        ensure     => running,
+        enable     => $enable,
+        hasstatus  => true,
+        hasrestart => true,
+      }
+    }
+    Darwin: {
+      file { '/Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist':
+        ensure => 'file',
+        mode => 644,
+        owner => 'root',
+        group => 'wheel',
+        content => template("${module_name}/org.jenkins-ci.slave.jnlp.plist.erb"),
+        notify  => Service['jenkins-slave'],
+      }
+
+      file { "/$slave_home/run-jenkins-slave":
+        ensure  => 'file',
+        mode    => '0700',
+        owner   => 'root',
+        group   => 'wheel',
+        content => template("${module_name}/jenkins-slave.${::osfamily}"),
+        notify  => Service['jenkins-slave'],
+      }
+      service { 'jenkins-slave':
+        ensure     => running,
+        enable     => $enable,
+        name => 'org.jenkins-ci.slave.jnlp'
+      }
     }
     default: {
       file { '/etc/init.d/jenkins-slave':
@@ -189,14 +223,13 @@ class jenkins::slave (
         content => template("${module_name}/jenkins-slave.erb"),
         notify  => Service['jenkins-slave'],
       }
+      service { 'jenkins-slave':
+        ensure     => running,
+        enable     => $enable,
+        hasstatus  => true,
+        hasrestart => true,
+      }
     }
-  }
-
-  service { 'jenkins-slave':
-    ensure     => running,
-    enable     => $enable,
-    hasstatus  => true,
-    hasrestart => true,
   }
 
   Exec['get_swarm_client']
