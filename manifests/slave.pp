@@ -103,6 +103,7 @@ class jenkins::slave (
       name       => $slave_user,
       comment    => 'Jenkins Slave user',
       home       => $slave_home,
+      uid        => $slave_uid,
       managehome => $::osfamily != 'Darwin',
     }
   }
@@ -152,8 +153,6 @@ class jenkins::slave (
   if $slave_home {
     $fsroot_flag = "-fsroot ${slave_home}"
   }
-
-  $mode_flag = ''
 
   $executors_flag = "-executors ${executors}"
 
