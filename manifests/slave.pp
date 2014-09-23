@@ -118,10 +118,19 @@ class jenkins::slave (
     }
   }
 
+  # create home diretory separately (since user provider directoryservice can not manage home directories).
+  if $::osfamily == 'Darwin' {
+    exec { "/usr/sbin/createhomedir -c -l -u ${slave_user}":
+      subscribe => User[$slave_user],
+      refreshonly => true,
+      unless => "/bin/test -d ${slave_home}/Library",
+    }
+  }
+
   exec { 'get_swarm_client':
     command => "wget -O ${slave_home}/${client_jar} ${client_url}/${client_jar}",
     path    => '/usr/bin:/usr/sbin:/bin:/usr/local/bin',
-    #user    => $slave_user,
+    user    => $slave_user,
     #refreshonly => true,
     creates => "${slave_home}/${client_jar}",
     ## needs to be fixed if you create another version..
