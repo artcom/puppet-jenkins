@@ -168,7 +168,7 @@ class jenkins::slave (
   # choose the correct init functions
   case $::osfamily {
     Debian:  {
-      file { '/etc/init.d/jenkins-slave-debian':
+      file { '/etc/init.d/jenkins-slave':
         ensure  => 'file',
         mode    => '0700',
         owner   => 'root',
