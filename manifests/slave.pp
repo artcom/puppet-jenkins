@@ -121,9 +121,9 @@ class jenkins::slave (
   # create home diretory separately (since user provider directoryservice can not manage home directories).
   if $::osfamily == 'Darwin' {
     exec { "/usr/sbin/createhomedir -c -l -u ${slave_user}":
-      subscribe => User[$slave_user],
+      subscribe   => User[$slave_user],
       refreshonly => true,
-      unless => "/bin/test -d ${slave_home}/Library",
+      unless      => "/bin/test -d ${slave_home}/Library",
     }
   }
 
@@ -200,15 +200,15 @@ class jenkins::slave (
     }
     Darwin: {
       file { '/Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist':
-        ensure => 'file',
-        mode => 644,
-        owner => 'root',
-        group => 'wheel',
+        ensure  => 'file',
+        mode    => '0644',
+        owner   => 'root',
+        group   => 'wheel',
         content => template("${module_name}/org.jenkins-ci.slave.jnlp.plist.erb"),
         notify  => Service['jenkins-slave'],
       }
 
-      file { "/$slave_home/run-jenkins-slave":
+      file { "/${slave_home}/run-jenkins-slave":
         ensure  => 'file',
         mode    => '0700',
         owner   => $slave_user,
@@ -217,9 +217,9 @@ class jenkins::slave (
         notify  => Service['jenkins-slave'],
       }
       service { 'jenkins-slave':
-        ensure     => running,
-        enable     => $enable,
-        name => 'org.jenkins-ci.slave.jnlp'
+        ensure => running,
+        enable => $enable,
+        name   => 'org.jenkins-ci.slave.jnlp'
       }
     }
     default: {
