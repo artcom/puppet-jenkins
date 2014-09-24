@@ -52,8 +52,8 @@ RESULT=-1
 
 JAVA_ARGS="${JAVA_ARGS} -Djavax.net.ssl.trustStore=NONE -Djavax.net.ssl.trustStoreType=KeychainStore -Djavax.net.ssl.keyStorePassword=-"
 
-echo "Calling java ${JAVA_ARGS} -jar ${JENKINS_HOME}/<%= client_jar -%> -master <%= masterurl -%> <%= ui_user_flag -%> <%= ui_pass_flag -%> <%= executors_flag -%> <%= @labels_flag -%>"
-java ${JAVA_ARGS} -jar ${JENKINS_HOME}/<%= client_jar -%> -master <%= masterurl -%> <%= ui_user_flag -%> <%= ui_pass_flag -%> <%= executors_flag -%> <%= @labels_flag -%> &
+echo "Calling java ${JAVA_ARGS} -jar ${JENKINS_HOME}/<%= client_jar -%> -master <%= masterurl -%> <%= ui_user_flag -%> <%= ui_pass_flag -%> <%= executors_flag -%> -name <%= @fqdn -%> <%= @labels_flag -%>"
+java ${JAVA_ARGS} -jar ${JENKINS_HOME}/<%= client_jar -%> -master <%= masterurl -%> <%= ui_user_flag -%> <%= ui_pass_flag -%> <%= executors_flag -%> -name <%= @fqdn -%> <%= @labels_flag -%> &
 echo $! > ${JENKINS_HOME}/.slave.pid
 wait `cat ${JENKINS_HOME}/.slave.pid`
 unload
