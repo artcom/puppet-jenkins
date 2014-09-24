@@ -211,7 +211,7 @@ class jenkins::slave (
       file { "/$slave_home/run-jenkins-slave":
         ensure  => 'file',
         mode    => '0700',
-        owner   => '$slave_user',
+        owner   => $slave_user,
         group   => 'wheel',
         content => template("${module_name}/jenkins-slave.${::osfamily}"),
         notify  => Service['jenkins-slave'],
