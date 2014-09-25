@@ -70,7 +70,10 @@ class jenkins::slave (
   $manage_slave_user        = true,
   $slave_user               = 'jenkins-slave',
   $slave_uid                = undef,
-  $slave_home               = '/home/jenkins-slave',
+  $slave_home               = $::osfamily ? {
+      darwin  => '/Users/jenkins-slave',
+      default => '/home/jenkins-slave',
+  },
   $slave_mode               = 'normal',
   $disable_ssl_verification = false,
   $labels                   = undef,
@@ -119,10 +122,13 @@ class jenkins::slave (
   }
 
   # create home diretory if necessary (workaround for osx).
-  file { "${slave_home}":
+  if $manage_slave_user and $::osfamily == 'Darwin' {
+    file { "${slave_home}":
       ensure => "directory",
       owner  => $slave_user,
       mode   => 755,
+      before => Exec['get_swarm_client'],
+    }
   }
 
   exec { 'get_swarm_client':
@@ -239,8 +245,7 @@ class jenkins::slave (
     }
   }
 
-  File[$slave_home]
-  -> Exec['get_swarm_client']
+  Exec['get_swarm_client']
      -> Service['jenkins-slave']
 
   if $install_java {
