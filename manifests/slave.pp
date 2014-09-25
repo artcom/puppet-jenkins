@@ -118,13 +118,11 @@ class jenkins::slave (
     }
   }
 
-  # create home diretory separately (since user provider directoryservice can not manage home directories).
-  if $::osfamily == 'Darwin' {
-    exec { "/usr/sbin/createhomedir -c -l -u ${slave_user}":
-      subscribe   => User[$slave_user],
-      refreshonly => true,
-      unless      => "/bin/test -d ${slave_home}/Library",
-    }
+  # create home diretory if necessary (workaround for osx).
+  file { "${slave_home}":
+      ensure => "directory",
+      owner  => $slave_user,
+      mode   => 755,
   }
 
   exec { 'get_swarm_client':
@@ -215,6 +213,7 @@ class jenkins::slave (
         group   => 'wheel',
         content => template("${module_name}/jenkins-slave.${::osfamily}"),
         notify  => Service['jenkins-slave'],
+        require => File[$slave_home],
       }
       service { 'jenkins-slave':
         ensure => running,
@@ -240,8 +239,9 @@ class jenkins::slave (
     }
   }
 
-  Exec['get_swarm_client']
-  -> Service['jenkins-slave']
+  File[$slave_home]
+  -> Exec['get_swarm_client']
+     -> Service['jenkins-slave']
 
   if $install_java {
       Class['java'] ->
