@@ -126,6 +126,7 @@ class jenkins::slave (
     file { "${slave_home}":
       ensure => "directory",
       owner  => $slave_user,
+      group  => 'wheel'
       mode   => 755,
       before => Exec['get_swarm_client'],
     }
