@@ -78,7 +78,8 @@ class jenkins::slave (
   $disable_ssl_verification = false,
   $labels                   = undef,
   $install_java             = $jenkins::params::install_java,
-  $enable                   = true
+  $use_local_launch_config  = false,
+  $enable                   = true,
 ) inherits jenkins::params {
 
   $client_jar = "swarm-client-${version}-jar-with-dependencies.jar"
@@ -204,28 +205,39 @@ class jenkins::slave (
       }
     }
     Darwin: {
-      file { '/Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist':
+        if ($use_local_launch_config) {
+            $launch_config_path = "${slave_home}/Library/LaunchAgents"
+            $launch_config_user = $slave_user
+        } else {
+            $launch_config_path = '/Library/LaunchDaemons'
+            $launch_config_user = 'root'
+        }
+      
+      file { "${launch_config_path}/org.jenkins-ci.slave.jnlp.plist":
         ensure  => 'file',
         mode    => '0644',
-        owner   => 'root',
+        owner   => $launch_config_user,
         group   => 'wheel',
         content => template("${module_name}/org.jenkins-ci.slave.jnlp.plist.erb"),
-        notify  => Service['jenkins-slave'],
+        # notify  => Service['jenkins-slave'],
       }
 
-      file { "/${slave_home}/run-jenkins-slave":
+      file { "${slave_home}/run-jenkins-slave":
         ensure  => 'file',
         mode    => '0700',
         owner   => $slave_user,
         group   => 'wheel',
         content => template("${module_name}/jenkins-slave.${::osfamily}"),
-        notify  => Service['jenkins-slave'],
+        # notify  => Service['jenkins-slave'],
         require => File[$slave_home],
       }
-      service { 'jenkins-slave':
-        ensure => running,
-        enable => $enable,
-        name   => 'org.jenkins-ci.slave.jnlp'
+      
+      if (use_local_launch_config == false) {
+        service { 'jenkins-slave':
+          ensure => running,
+          enable => $enable,
+          name   => 'org.jenkins-ci.slave.jnlp'
+        }
       }
     }
     default: {
@@ -246,9 +258,10 @@ class jenkins::slave (
     }
   }
 
-  Exec['get_swarm_client']
-     -> Service['jenkins-slave']
-
+  if (use_local_launch_config == false) {
+    Exec['get_swarm_client']
+      -> Service['jenkins-slave']
+  }
   if $install_java {
       Class['java'] ->
         Service['jenkins-slave']
