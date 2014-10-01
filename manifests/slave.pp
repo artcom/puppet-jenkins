@@ -124,8 +124,8 @@ class jenkins::slave (
 
   # create home diretory if necessary (workaround for osx).
   if $manage_slave_user and $::osfamily == 'Darwin' {
-    file { "${slave_home}":
-      ensure => "directory",
+    file { $slave_home:
+      ensure => 'directory',
       owner  => $slave_user,
       group  => 'wheel',
       mode   => '0755',
