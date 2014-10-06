@@ -243,7 +243,7 @@ class jenkins::slave (
         require => File[$slave_home],
       }
       
-      if (use_local_launch_config == false) {
+      if ($use_local_launch_config == false) {
         service { 'jenkins-slave':
           ensure => running,
           enable => $enable,
@@ -269,7 +269,7 @@ class jenkins::slave (
     }
   }
 
-  if (use_local_launch_config == false) {
+  if ($use_local_launch_config == false) {
     Exec['get_swarm_client']
       -> Service['jenkins-slave']
   }
