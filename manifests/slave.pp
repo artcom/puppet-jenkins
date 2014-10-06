@@ -205,14 +205,25 @@ class jenkins::slave (
       }
     }
     Darwin: {
-        if ($use_local_launch_config) {
-            $launch_config_path = "${slave_home}/Library/LaunchAgents"
-            $launch_config_user = $slave_user
-        } else {
-            $launch_config_path = '/Library/LaunchDaemons'
-            $launch_config_user = 'root'
-        }
+      if ($use_local_launch_config) {
+          $launch_config_path = "${slave_home}/Library/LaunchAgents"
+          $launch_config_user = $slave_user
+      } else {
+          $launch_config_path = '/Library/LaunchDaemons'
+          $launch_config_user = 'root'
+      }
       
+      if ($use_local_launch_config) {
+        file { $launch_config_path:
+          ensure  => 'directory',
+          mode    => '0644',
+          owner   => $launch_config_user,
+          group   => 'wheel',
+          # notify  => Service['jenkins-slave'],
+          before  => File["${launch_config_path}/org.jenkins-ci.slave.jnlp.plist"],
+        }
+      }
+
       file { "${launch_config_path}/org.jenkins-ci.slave.jnlp.plist":
         ensure  => 'file',
         mode    => '0644',
