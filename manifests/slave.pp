@@ -216,6 +216,15 @@ class jenkins::slave (
       }
       
       if ($use_local_launch_config) {
+        file { $log_path:
+          ensure => 'directory',
+          mode   => '0644',
+          owner  => $launch_config_user,
+          group  => 'wheel',
+          # notify  => Service['jenkins-slave'],
+          before => File[${launch_config_path}],
+        }
+
         file { $launch_config_path:
           ensure => 'directory',
           mode   => '0644',
