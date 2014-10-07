@@ -206,9 +206,11 @@ class jenkins::slave (
     }
     Darwin: {
       if ($use_local_launch_config) {
+          $log_path = "${slave_home}/log/jenkins-slave"
           $launch_config_path = "${slave_home}/Library/LaunchAgents"
           $launch_config_user = $slave_user
       } else {
+          $log_path = '/var/log/jenkins-slave'
           $launch_config_path = '/Library/LaunchDaemons'
           $launch_config_user = 'root'
       }
