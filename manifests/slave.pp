@@ -222,7 +222,7 @@ class jenkins::slave (
           owner  => $launch_config_user,
           group  => 'wheel',
           # notify  => Service['jenkins-slave'],
-          before => File[${launch_config_path}],
+          before => File[$slave_home],
         }
 
         file { $launch_config_path:
